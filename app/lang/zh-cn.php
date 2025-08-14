@@ -48,7 +48,7 @@ return [                                       //    日本 flag-jp          韩
     'user information does not exist' => '用户信息不存在，请登录',// 情報が存在しません         정보 없음       Thông tin không tồn tại        ข้อมูลที่ไม่มีอยู่จริง
     'upload failed' => '上传失败',//アップロードに失敗しました     업로드 실패        Lỗi tải lên     ล้มเหลวในการอัพโหลด
     'agent cannot log in' => '账号或者密码错误！',//アカウントパスワードエラー    아이디 혹은 비밀번호 오류   Tài khoản hay mật khẩu sai   บัญชีผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
-    'baccarat' => '百家乐',// 百家楽         백가락    Bargara    ทุกครอบครัว
+    'baccarat' => '骰宝',// 百家楽         백가락    Bargara    ทุกครอบครัว
     'cattle' => '牛牛',//牛    소 소     Ngưu Tam        วัวตัวผู้
     'hall' => '游戏大厅',//ゲームホール    게임 홀     Game Name       ล็อบบี้เกม
     'scene' => '现场台',//げんばだい    현장 데스크      Ga trường   โต๊ะสนาม

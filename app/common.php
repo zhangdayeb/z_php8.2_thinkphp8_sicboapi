@@ -1,5 +1,14 @@
 <?php
 
+// function worker_tcp($uid, $mag = '', array $data=[], $code = 209)
+// {
+//     $client = stream_socket_client(env('worker.two_tcp', 'websocket://0.0.0.0:3009'), $errno, $errmsg, 1);
+//     // 推送的数据，包含uid字段，表示是给这个uid推送
+//     $data = array('code' => $code, 'user_id' => $uid, 'data' => $data, 'msg'=>$mag);
+//     // 发送数据，注意5678端口是Text协议的端口，Text协议需要在数据末尾加上换行符
+//     fwrite($client, json_encode($data) . "\n");
+// }
+
 function redis()
 {
     return think\facade\Cache::store('redis');
@@ -39,7 +48,7 @@ function bureau_number($table_id, $xue_number = false)
 function xue_number($table_id)
 {
     //取才创建时间最后一条数据
-    $find = \app\model\Luzhu::where('table_id', $table_id)->where('status', 1)->order('id desc')->find();
+    $find = \app\model\Luzhu::where('table_id', $table_id)->where('status', 1)->whereTime('create_time', 'today')->order('id desc')->find();
     if (empty($find)) return ['xue_number' => 1, 'pu_number' => 1];
     $xue = $find->xue_number;
     if ($find->result == 0) {

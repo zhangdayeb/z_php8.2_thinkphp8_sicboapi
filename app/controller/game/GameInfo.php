@@ -16,14 +16,12 @@ class GameInfo extends Base
         if ($id <= 0) show([], config('ToConfig.http_code.error'), '露珠ID必填');
         $find = Luzhu::find($id);
         if (empty($find)) show([], config('ToConfig.http_code.error'), '牌型信息不存在');
-        if ($find->game_type != 3) show([], config('ToConfig.http_code.error'), '百家乐游戏类型不正确');
+        if ($find->game_type != 3) show([], config('ToConfig.http_code.error'), '骰宝游戏类型不正确');
         //获取台桌开牌信息
         $service = new WorkerOpenPaiService();
-        $poker = $service->get_pai_info_bjl($find->result_pai);
+        $poker = $service->get_pai_info_sicbo($find->result_pai);
         show($poker);
     }
-
-
 
     /**
      * 获取用户投注历史记录
@@ -147,7 +145,9 @@ class GameInfo extends Base
         // 解析投注详情
         $betDetails = $this->parseBetDetails($record['detail'], $record['bet_amt'], $record['win_amt']);
         
-       
+        // 解析游戏结果
+        $diceResults = $this->parseGameResult($record['lu_zhu_id']);
+        
         // 确定状态
         $status = $this->getRecordStatus($record);
 
@@ -162,6 +162,8 @@ class GameInfo extends Base
             'total_bet_amount' => (float)$record['bet_amt'],
             'total_win_amount' => (float)$record['win_amt'],
             'net_amount' => (float)$record['delta_amt'],
+            'dice_results' => $diceResults['dice'] ?? [1, 1, 1],
+            'dice_total' => $diceResults['total'] ?? 3,
             'status' => $status,
             'is_settled' => $record['close_status'] != 1,
             'currency' => 'CNY'
@@ -178,15 +180,56 @@ class GameInfo extends Base
         
         return [
             [
-                'bet_type' => '',
+                'bet_type' => $this->extractBetType($detail),
                 'bet_type_name' => $betTypeName,
                 'bet_amount' => (float)$betAmt,
-                'odds' => '',
+                'odds' => $this->calculateOdds($betAmt, $winAmt),
                 'win_amount' => (float)$winAmt,
                 'is_win' => $winAmt > 0,
                 'rate_id' => 1
             ]
         ];
+    }
+
+    /**
+     * 解析游戏结果
+     */
+private function parseGameResult($lu_zhu_id)
+{
+    $r = Db::name('dianji_lu_zhu')->find($lu_zhu_id);
+    $r_result = $r['result_pai'];
+    
+    // 将 JSON 字符串解码为数组
+    $r_result = json_decode($r_result, true);
+    
+    
+    // 简单解析结果，如果没有具体数据则返回默认值
+    return [
+        'dice' => [$r_result[1], $r_result[2], $r_result[3]],
+        'total' => 3
+    ];
+}
+
+    /**
+     * 提取投注类型
+     */
+    private function extractBetType($detail)
+    {
+        if (strpos($detail, '大') !== false) return 'big';
+        if (strpos($detail, '小') !== false) return 'small';
+        if (strpos($detail, '单') !== false) return 'odd';
+        if (strpos($detail, '双') !== false) return 'even';
+        return 'unknown';
+    }
+
+    /**
+     * 计算赔率
+     */
+    private function calculateOdds($betAmt, $winAmt)
+    {
+        if ($betAmt <= 0 || $winAmt <= 0) return '1:0';
+        $ratio = round($winAmt / $betAmt, 2);
+        return '1:' . $ratio;
     }
 
     /**
@@ -207,5 +250,6 @@ class GameInfo extends Base
                 return 'pending';
         }
     }
+
 
 }

@@ -39,7 +39,7 @@ class CardServiceBase
      * - 数据格式: JSON字符串，包含所有牌面信息
      * 
      * @param int $table_id 台桌ID
-     * @param int $game_type 游戏类型 (1=牛牛, 2=龙虎, 3=百家乐)
+     * @param int $game_type 游戏类型 (1=牛牛, 2=龙虎, 3=骰宝)
      * @return array|false 开牌信息数组，无数据时返回false
      */
     public function get_pai_info($table_id, $game_type)
@@ -55,13 +55,15 @@ class CardServiceBase
             return false;
         }
         
+        // 用一次删除 
+        redis()->del($redis_key);
         // 初始化开牌服务
         $service = new WorkerOpenPaiService();
         
         // 根据游戏类型调用相应的处理方法
         switch ($game_type) {
-            case 3: // 百家乐游戏
-                return $service->get_pai_info_bjl($pai_data);
+            case 9: // 骰宝游戏
+                return $service->get_pai_info_sicbo($pai_data);
                 break;
                 
             default:
@@ -109,30 +111,33 @@ class CardServiceBase
         return $money;
     }
 
+    /**
+     * ========================================
+     * 记录开牌信息到数据库
+     * ========================================
+     * 
+     * 将开牌结果和对应的露珠ID保存到开牌记录表中
+     * 用于历史查询和数据分析
+     * 
+     * 数据表说明：
+     * - 表名: dianji_lu_zhu_open_pai
+     * - 字段: open_pai(开牌结果JSON), luzhu_id(露珠记录ID)
+     * - 用途: 开牌历史查询、数据统计分析
+     * 
+     * @param string $pai_result 开牌结果JSON字符串
+     * @param int $id 露珠记录ID
+     * @return void
+     */
+    public function get_open_pai_info($pai_result, $id)
+    {
+        // 组装插入数据
+        $pai = [
+            'open_pai'  => $pai_result,  // 开牌结果JSON数据
+            'luzhu_id'  => $id           // 关联的露珠记录ID
+        ];
+        
+        // 插入到开牌记录表
+        Db::name('dianji_lu_zhu_open_pai')->insert($pai);
+    }
 }
 
-/**
- * ========================================
- * 类使用说明和最佳实践
- * ========================================
- * 
- * 1. 数据流向：
- *    荷官开牌 -> 结算服务 -> Redis缓存 -> 本服务读取 -> 推送给客户端
- * 
- * 2. Redis缓存策略：
- *    - 开牌数据：存储5秒，用于实时推送
- *    - 派彩数据：存储5秒，用户领取后删除
- *    - 避免数据长期占用内存
- * 
- * 3. 错误处理：
- *    - 缓存未命中返回false，不抛出异常
- *    - 上层调用需要检查返回值
- * 
- * 4. 扩展说明：
- *    - 新增游戏类型时，在get_pai_info()中添加case分支
- *    - 每种游戏类型需要对应的解析方法
- * 
- * 5. 性能优化：
- *    - Redis读取速度快，适合高并发场景
- *    - 数据库写入异步处理，不影响用户体验
- */

@@ -55,7 +55,6 @@ class GetForeignTableInfo extends BaseController
         try {
             // 查询用户基础信息
             $userInfo = UserModel::where('id', $user_id)->find();
-            
             // 先检查用户是否存在
             if (empty($userInfo)) {
                 LogHelper::warning('用户不存在', ['user_id' => $user_id]);
@@ -171,18 +170,7 @@ class GetForeignTableInfo extends BaseController
         }
     }
 
-    /**
-     * 测试露珠数据接口
-     * @return string
-     */
-    public function testluzhu(){
-    
-        $params = $this->request->param();
-       
-        $returnData = LuzhuHeguan::LuZhutest($params);
-        show($returnData, 1);
-    }
-    
+    //获取台桌视频
     public function get_table_video()
     {
         $params = $this->request->param();
@@ -286,7 +274,7 @@ class GetForeignTableInfo extends BaseController
 
         $map['table_id'] = $params['tableId'];
         $map['xue_number'] = $params['xue'];
-        $map['game_type'] = $params['gameType']; // 代表百家乐
+        $map['game_type'] = $params['gameType']; // 代表骰宝
 
         $nowTime = time();
 		$startTime = strtotime(date("Y-m-d 09:00:00", time()));
@@ -297,25 +285,8 @@ class GetForeignTableInfo extends BaseController
 		    // 保持不变 这样做到 自动更新 露珠
 		}
 
-        // 需要兼容 龙7 熊8 大小老虎 69 幸运6 
+        // 暂时不知道统计什么 先空着
         $returnData = array();
-        $returnData_zhuang_1 = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '1|%')->where($map)->order('id asc')->count();
-        $returnData_zhuang_4 = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '4|%')->where($map)->order('id asc')->count();
-        $returnData_zhuang_6 = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '6|%')->where($map)->order('id asc')->count();
-        $returnData_zhuang_7 = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '7|%')->where($map)->order('id asc')->count();
-        $returnData_zhuang_9 = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '9|%')->where($map)->order('id asc')->count();
-		$returnData['zhuang'] = $returnData_zhuang_1 + $returnData_zhuang_4 + $returnData_zhuang_6 + $returnData_zhuang_7 + $returnData_zhuang_9;
-
-        $returnData_xian_2 = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '2|%')->where($map)->order('id asc')->count();
-        $returnData_xian_8 = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '8|%')->where($map)->order('id asc')->count();
-        $returnData['xian'] = $returnData_xian_2 + $returnData_xian_8;
-
-        $returnData['he'] = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '3|%')->where($map)->order('id asc')->count();
-        $returnData['zhuangDui'] = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '%|1')->where($map)->order('id asc')->count();
-        $returnData['xianDui'] = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '%|2')->where($map)->order('id asc')->count();
-        $returnData['zhuangXianDui'] = Luzhu::whereTime('create_time','>=', date('Y-m-d H:i:s',$startTime))->where('result', 'like', '%|3')->where($map)->order('id asc')->count();
-        $returnData['zhuangDui'] += $returnData['zhuangXianDui'];
-        $returnData['xianDui'] += $returnData['zhuangXianDui'];
         // 返回数据
         show($returnData, 1);
     }
@@ -378,8 +349,8 @@ class GetForeignTableInfo extends BaseController
 
         // 根据游戏类型调用相应服务
         switch ($map['game_type']) {
-            case 3:
-                LogHelper::debug('调用百家乐开牌服务', ['table_id' => $map['table_id']]);
+            case 9:
+                LogHelper::debug('调用骰宝开牌服务', ['table_id' => $map['table_id']]);
                 $card = new CardSettlementService();
                 return $card->open_game($map, $HeguanLuzhu, $id);
             default:
@@ -389,63 +360,7 @@ class GetForeignTableInfo extends BaseController
     }
     
     
-    //测试 露珠缓存
-    public function set_post_data_test(): string
-    {
-        $postField = 'gameType,tableId,xueNumber,puNumber,result,ext,pai_result';
-        $params = $this->request->only(explode(',', $postField), 'param', null);
-        
-       
-     
-
-        try {
-            validate(validates::class)->scene('lz_post')->check($params);
-        } catch (ValidateException $e) {
-            return show([], config('ToConfig.http_code.error'), $e->getError());
-        }
-        $map = array();
-        $map['status'] = 1;
-        $map['table_id'] = $params['tableId'];
-        $map['xue_number'] = $params['xueNumber'];
-        $map['pu_number'] = $params['puNumber'];
-        $map['game_type'] = $params['gameType'];
-
-        //查询当日最新的一铺牌
-        $info = Luzhu::whereTime('create_time', 'today')->where('result','<>',0)->where($map)->find();
-        if (!empty($info)) show($info, 0, '数据重复上传');
-
-        #####开始预设###########
-        //查询是否有预设的开牌信息
-        $presetInfo = LuzhuPreset::LuZhuPresetFind($map);
-        $map['update_time'] = $map['create_time'] = time();
-        $HeguanLuzhu = $map;
-
-        $id = 0;
-        if ($presetInfo){
-            //插入当前信息
-            $id = $presetInfo['id'];
-            $map['result'] = $presetInfo['result'];
-            $map['result_pai'] = $presetInfo['result_pai'];
-        }else{
-            //插入当前信息
-            $map['result'] = intval($params['result']) . '|' . intval($params['ext']);
-            $map['result_pai'] = json_encode($params['pai_result']);
-        }
-        //荷官正常露珠
-        $HeguanLuzhu['result'] = intval($params['result']) . '|' . intval($params['ext']);
-        $HeguanLuzhu['result_pai'] = json_encode($params['pai_result']);
-        #####结束预设###########
-
-        switch ($map['game_type']){
-            case 3:
-                //龙虎开牌
-                $card = new CardSettlementService();
-                return $card->open_game($map,$HeguanLuzhu,$id);
-            default:
-                show([],404,'game_type错误！');
-        }
-    }
-    
+   
     //删除指定露珠
     public function lz_delete(): string
     {
@@ -507,7 +422,7 @@ class GetForeignTableInfo extends BaseController
     public function set_start_signal(): string
     {
         $table_id = $this->request->param('tableId', 0);
-        
+
         // 请求远程更新用户的余额
         if(env('zonghepan.enable', false)) {
             $url = env('zonghepan.game_url', '0.0.0.0').RequestUrl::bet_result();            
@@ -561,9 +476,9 @@ class GetForeignTableInfo extends BaseController
             show($data, config('ToConfig.http_code.error'));
         }
         $data['table_id'] = $table_id;
-        Queue::later($time, TableEndTaskJob::class, $data,'bjl_end_queue');
+        Queue::later($time, TableEndTaskJob::class, $data,'sicbo_end_queue');
         redis()->del('table_info_'.$table_id);
-        redis()->set('table_set_start_signal_'.$table_id,$table_id,$time+5);//储存redis
+        redis()->set('table_set_start_signal_'.$table_id,$table_id,$time+1);//储存redis
         show($data);
     }
 
@@ -589,7 +504,8 @@ class GetForeignTableInfo extends BaseController
         $params = $this->request->param();
         $returnData = array();
         $info = Table::order('id desc')->find($params['tableId']);
-        // 发给前台的 数据
+        // 发给前台的 数据             
+        $returnData['table_title'] = $info['table_title'];
         $returnData['lu_zhu_name'] = $info['lu_zhu_name'];
         $returnData['right_money_banker_player'] = $info['xian_hong_zhuang_xian_usd'];
         $returnData['right_money_banker_player_cny'] = $info['xian_hong_zhuang_xian_cny'];
@@ -603,14 +519,14 @@ class GetForeignTableInfo extends BaseController
 
         // 获取最新的 靴号，铺号
         $xun = bureau_number($params['tableId'],true);
-
         $returnData['id'] = $info['id'];
         $returnData['num_pu'] = $xun['xue']['pu_number'];
         $returnData['num_xue'] = $xun['xue']['xue_number'];
+        $returnData['bureau_number'] = $xun['bureau_number'];
         // 返回数据
         show($returnData, 1);
     }
-
+    
     //台桌信息 靴号 铺号
     public function get_table_info_for_bet()
     {
@@ -624,7 +540,7 @@ class GetForeignTableInfo extends BaseController
         // 返回数据
         show($info, 1);
     }
-    
+
     //台桌信息
     public function get_table_wash_brand()
     {
@@ -635,6 +551,7 @@ class GetForeignTableInfo extends BaseController
         $table->save(['wash_status'=>$status]);
         $returnData['result_info']  = ['table_info'=>['game_type'=>123456]];
         $returnData['money_spend']  = '';
+        // worker_tcp('userall','洗牌中！',$returnData,207);
         // 返回数据
         show([], 1);
     }
