@@ -25,7 +25,8 @@
         "topthink/think-orm": "^3.0|^4.0",
         "topthink/think-filesystem": "^2.0",
         "firebase/php-jwt": "^6.11",
-        "topthink/think-worker": "^5.0"
+        "topthink/think-worker": "^5.0",
+        "topthink/think-queue": "^3.0"
     },
     "require-dev": {
         "topthink/think-dumper": "^1.0",
