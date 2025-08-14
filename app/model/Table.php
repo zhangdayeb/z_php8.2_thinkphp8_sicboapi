@@ -28,7 +28,6 @@ class Table extends Model
     {
         $info = Table::find($id);
         if (empty($info)) show([], config('ToConfig.http_code.error'), '台桌不存在');
-        $info['table_explain'] =  TableLangModel::table_explain_value($info);
         return $info;
     }
 
@@ -38,10 +37,6 @@ class Table extends Model
         $self = self::where($where);
         !empty($order) && $self->order($order);
         $sel = $self->select();
-        //查询游戏的多语言
-        foreach ($sel as $key=>&$value){
-            $value['table_explain'] =  TableLangModel::table_explain_value($value);
-        }
         return $sel;
     }
 

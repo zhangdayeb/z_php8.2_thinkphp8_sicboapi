@@ -111,33 +111,5 @@ class CardServiceBase
         return $money;
     }
 
-    /**
-     * ========================================
-     * 记录开牌信息到数据库
-     * ========================================
-     * 
-     * 将开牌结果和对应的露珠ID保存到开牌记录表中
-     * 用于历史查询和数据分析
-     * 
-     * 数据表说明：
-     * - 表名: dianji_lu_zhu_open_pai
-     * - 字段: open_pai(开牌结果JSON), luzhu_id(露珠记录ID)
-     * - 用途: 开牌历史查询、数据统计分析
-     * 
-     * @param string $pai_result 开牌结果JSON字符串
-     * @param int $id 露珠记录ID
-     * @return void
-     */
-    public function get_open_pai_info($pai_result, $id)
-    {
-        // 组装插入数据
-        $pai = [
-            'open_pai'  => $pai_result,  // 开牌结果JSON数据
-            'luzhu_id'  => $id           // 关联的露珠记录ID
-        ];
-        
-        // 插入到开牌记录表
-        Db::name('dianji_lu_zhu_open_pai')->insert($pai);
-    }
 }
 

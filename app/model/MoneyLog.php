@@ -37,8 +37,6 @@ class MoneyLog extends Model
                 break;
             case 8:
                 $status = 508;
-            case 9:
-                $status = 509;
                 break;
         }
         !isset($info['deposit_amt']) && $info['deposit_amt'] = 0;

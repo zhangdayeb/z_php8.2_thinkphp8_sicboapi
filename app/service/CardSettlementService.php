@@ -78,10 +78,7 @@ class CardSettlementService extends CardServiceBase
             LuzhuPreset::IsStatus($id);
         }
 
-        // 第四步：保存开牌历史记录
-        $this->get_open_pai_info($post['result_pai'], $saveResult['luzhu_id']);
-
-        // 第五步：分发异步结算任务
+        // 第四步：分发异步结算任务
         $this->dispatchSettlementTask($post, $saveResult['luzhu_id']);
 
         LogHelper::debug('=== 开牌服务完成 ===');
