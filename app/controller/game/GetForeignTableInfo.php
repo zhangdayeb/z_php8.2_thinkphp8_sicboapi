@@ -18,6 +18,7 @@ use app\model\GameRecords;         // 游戏记录模型
 use think\facade\Db;               // 数据库操作
 use app\business\Curl;
 use app\business\RequestUrl;
+use app\model\HomeTokenModel;
 
 class GetForeignTableInfo extends BaseController
 {
@@ -59,6 +60,19 @@ class GetForeignTableInfo extends BaseController
             if (empty($userInfo)) {
                 LogHelper::warning('用户不存在', ['user_id' => $user_id]);
                 return show([], config('ToConfig.http_code.error'), '用户不存在');
+            }
+
+            $token = md5($userInfo['id'] . 'home' . date('Y-m-d H:i:s', time()) . 'token') . randomkey(mt_rand(10, 30));
+            $HomeTokenModel = new HomeTokenModel();
+            //查询是否存在这条token的用户
+            $update = $HomeTokenModel->where('user_id', $find['id'])
+                ->update(['token' => $token, 'create_time' => date('Y-m-d H:i:s')]);
+
+            //数据不存在时插入
+            if ($update == 0) {
+                $HomeTokenModel->insert([
+                    'token' => $token, 'user_id' => $find['id'], 'create_time' => date('Y-m-d H:i:s')
+                ]);
             }
             
             // 转换为数组便于处理

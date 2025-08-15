@@ -23,15 +23,7 @@ class Base extends BaseController
         $token = $this->request->header('x-csrf-token');
         if (empty($token)) $token = $this->request->post('token');
         if (empty($token)) return show([], 505, 'token不存在');
-
         $res = HomeTokenModel::auth_token($token); //查询token
-        if (empty($res)) return show([], 505, 'token无效');
-
-        //校验是否过期的token
-        if (time() - strtotime($res['create_time']) >= env('token.home_token_time', 60 * 30)) return show([], 504, 'token过期');
-        
-        //token没过期，修改当前token在线时间
-        HomeTokenModel::update_token($token);
 
         //查询当前用户信息
         $user_info = UserModel::page_one($res['user_id']);
