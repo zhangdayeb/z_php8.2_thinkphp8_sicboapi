@@ -62,16 +62,16 @@ class GetForeignTableInfo extends BaseController
                 return show([], config('ToConfig.http_code.error'), '用户不存在');
             }
 
-            $token = md5($userInfo['id'] . 'home' . date('Y-m-d H:i:s', time()) . 'token') . randomkey(mt_rand(10, 30));
+            $token = $this->request->header('x-csrf-token');
             $HomeTokenModel = new HomeTokenModel();
             //查询是否存在这条token的用户
-            $update = $HomeTokenModel->where('user_id', $find['id'])
+            $update = $HomeTokenModel->where('user_id', $userInfo['id'])
                 ->update(['token' => $token, 'create_time' => date('Y-m-d H:i:s')]);
 
             //数据不存在时插入
             if ($update == 0) {
                 $HomeTokenModel->insert([
-                    'token' => $token, 'user_id' => $find['id'], 'create_time' => date('Y-m-d H:i:s')
+                    'token' => $token, 'user_id' => $userInfo['id'], 'create_time' => date('Y-m-d H:i:s')
                 ]);
             }
             
