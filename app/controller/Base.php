@@ -3,7 +3,7 @@
 namespace app\controller;
 
 use app\model\HomeTokenModel;
-use app\model\UserModel;
+use app\model\UserModel;    
 use app\controller\common\LogHelper;
 use app\BaseController;
 use think\facade\Lang;
@@ -37,20 +37,13 @@ class Base extends BaseController
         $user_info = UserModel::page_one($res['user_id']);
 
         if (empty($user_info) || $user_info['status'] != 1) return show([], 503, '用户异常');
-
+        
+        $res['token'] = $token;
         //查询用户洗马什么的信息
         $lang = $this->request->param('lang','zh-cn');
         if ($lang == 'jpn') $lang ='jp';
-        $user_xima = UserSet::page_one($user_info['id'],$lang);
-        if(empty($user_xima['language'])){
-            $user_xima['language'] = $lang;
-        }
-        Lang::load(app()->getRootPath().'/app/lang/'.$user_xima['language'].'.php');
-        //session 登陆写入日志
-        $res['token'] = $token;
-        //合并用户信息和洗码信息
-        $user = array_merge($user_info,$user_xima);
-        self::$user = $user;
+        Lang::load(app()->getRootPath().'/app/lang/'.$lang.'.php');
+        self::$user = $user_info;
 
     }
 
