@@ -2,6 +2,8 @@
 
 namespace app\controller;
 
+use app\model\HomeTokenModel;
+use app\model\UserModel;
 use app\controller\common\LogHelper;
 use app\BaseController;
 use think\facade\Lang;
