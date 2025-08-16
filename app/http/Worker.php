@@ -6,69 +6,7 @@ use app\service\CardSettlementService;
 use app\model\Table;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
-
-// ===== 定义自定义的 redis 函数，支持密码认证 =====
-if (!function_exists('redis')) {
-    function redis() {
-        static $redis = null;
-        static $connected = false;
-        
-        if ($redis === null || !$connected) {
-            try {
-                $redis = new \Redis();
-                
-                // 使用配置或从环境变量读取
-                $host = env('redis.host', '127.0.0.1');
-                $port = env('redis.port', 6379);
-                $password = env('redis.password', '123456');  // 使用环境变量或默认密码
-                
-                // 连接 Redis
-                if (!$redis->connect($host, $port)) {
-                    throw new \Exception("Cannot connect to Redis");
-                }
-                
-                // 认证
-                if (!empty($password)) {
-                    if (!$redis->auth($password)) {
-                        throw new \Exception("Redis authentication failed");
-                    }
-                }
-                
-                $connected = true;
-                echo "Redis connected successfully\n";
-                
-            } catch (\Exception $e) {
-                echo "Redis error: " . $e->getMessage() . "\n";
-                
-                // 如果 Redis 连接失败，返回模拟对象
-                $redis = new class {
-                    public function get($key) { 
-                        return null; 
-                    }
-                    public function set($key, $value, $ttl = null) { 
-                        return false; 
-                    }
-                    public function setex($key, $ttl, $value) {
-                        return false;
-                    }
-                    public function __call($name, $arguments) {
-                        return null;
-                    }
-                };
-                $connected = false;
-            }
-        }
-        return $redis;
-    }
-}
-
-// 定义 bureau_number 函数
-if (!function_exists('bureau_number')) {
-    function bureau_number($table_id) {
-        return date('YmdHis') . '_' . $table_id;
-    }
-}
-// ===== 自定义函数定义完成 =====
+require_once __DIR__ . '/../common.php';
 
 // 初始化一个worker容器，监听2009端口
 $worker = new Worker(env('worker.one', 'websocket://0.0.0.0:2009'));
@@ -176,7 +114,7 @@ $worker->onWorkerStart = function ($worker) {
                     $WorkerOpenPaiService = new \app\service\WorkerOpenPaiService();
 
                     // 情况1： 发送给前端用户倒计时信号
-                    $redis = redis();
+                    $redis = redis();  // 使用 common.php 中的 redis() 函数
                     if ($redis) {
                         $signal = $redis->get('table_set_start_signal_' . $data['table_id']);
                         if ($signal) {
