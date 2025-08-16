@@ -435,45 +435,7 @@ class GetForeignTableInfo extends BaseController
     //开局信号
     public function set_start_signal(): string
     {
-        $table_id = $this->request->param('tableId', 0);
-
-        // 请求远程更新用户的余额
-        if(env('zonghepan.enable', false)) {
-            $url = env('zonghepan.game_url', '0.0.0.0').RequestUrl::bet_result();            
-            // 根据用户信息获取用户投注记录
-            $user_id = $user['id'];
-            $xue = xue_number($table_id);
-            $map = [];
-            $map['user_id'] = $user_id;
-            $map['table_id'] = $table_id;
-            $map['xue_number'] = $xue['xue_number'];
-            $map['pu_number'] = $xue['pu_number'];
-            $betRecord = Db::name('dianji_records')->where($map)->find();
-            if (empty($betRecord)) {
-                show([], config('ToConfig.http_code.error'), '没有投注记录');
-            }else{
-                $post_data = [];
-                // user_name=XGlisi&betId=123&roundId=1&externalTransactionId=123&betAmount=23.56&winAmount=23.56&effectiveTurnover=23.56&jackpotAmount=23.56&resultType=END&isFreespin=1&isEndRound=0&betTime=11652545&settledTime=25684256&winLoss=23.56&gameCode=bjl_1
-                $post_data['user_name'] = $user['user_name'];
-                $post_data['betId'] = $betRecord['id'];
-                $post_data['roundId'] = $xue['xue_number']; 
-                $post_data['externalTransactionId'] = $betRecord['id']; //  
-                $post_data['betAmount'] = $betRecord['bet_amt']; // 下注金额
-                $post_data['winAmount'] = $betRecord['win_amt']; // 赢取金额
-                $post_data['effectiveTurnover'] = $betRecord['bet_amt']; // 有效投注额
-                $post_data['jackpotAmount'] = 0; // 奖池金额
-                $post_data['resultType'] = "BET_WIN"; // 结果类型
-                $post_data['isFreespin'] = 0;  // Integer (0,1) 用于指示是否是免费旋转。
-                $post_data['isEndRound'] = 1; // Integer (0,1) 用于指示下注已完成的状态。
-                $post_data['betTime'] = time() * 1000; // 毫秒时间戳
-                $post_data['settledTime'] = time() * 1000; // 毫秒时间戳
-                $post_data['winLoss'] = $betRecord['win_amt'] - $betRecord['bet_amt']; // 输赢金额
-                $post_data['gameCode'] = 'bjl_'.$table_id; // 游戏代码
-                $data = Curl::post($url, $post_data, []);
-            }            
-        }
-
-        
+        $table_id = $this->request->param('tableId', 0);        
         $time = $this->request->param('time', 45);
         if ($table_id <= 0) show([], config('ToConfig.http_code.error'), 'tableId参数错误');
         $data = [

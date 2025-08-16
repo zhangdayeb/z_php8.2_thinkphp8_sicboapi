@@ -32,7 +32,7 @@ return [
             // 服务器地址
             'host' => env('redis.host', '127.0.0.1'),
             'port' => env('redis.port', 6379),
-            'password' => env('redis.pwd', '123456'),
+            'password' => '',  // 改为空字符串，不使用密码
         ],
     ],
 ];
